@@ -12,6 +12,7 @@ class Settings:
     MYSQL_SERVER: str = os.getenv("MYSQL_SERVER", "localhost")
     MYSQL_PORT: str = os.getenv("MYSQL_PORT", "3306")
     MYSQL_DB: str = os.getenv("MYSQL_DB", "mindspace_db")
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "TEST_SECRET")
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
