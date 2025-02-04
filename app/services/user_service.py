@@ -1,8 +1,9 @@
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import hash_password
+from app.core.security import hash_password, verify_password, create_access_token
 from app.models.user import User
-from app.schemas.users import UserCreate
+from app.schemas.users import UserCreate, UserLogin
 
 
 class AuthService:
@@ -16,3 +17,14 @@ class AuthService:
         await db.commit()
         await db.refresh(user)
         return user
+
+    @staticmethod
+    async def authenticate_user(db: AsyncSession, login_data: UserLogin):
+        result = await db.execute(select(User).where(User.email == login_data.email))
+        user = result.scalars().first()
+
+        if not user or not verify_password(login_data.password, user.hashed_password):
+            return None
+
+        access_token = create_access_token({"sub": user.email})
+        return {"access_token": access_token, "token_type": "bearer"}
