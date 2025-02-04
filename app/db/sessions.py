@@ -1,22 +1,17 @@
-# app/db/session.py (continued)
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+
 from app.core.config import settings
 
-SQLALCHEMY_DATABASE_URI = settings.SQLALCHEMY_DATABASE_URI
+DATABASE_URL = settings.SQLALCHEMY_DATABASE_URI
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URI,
-    pool_pre_ping=True  # Optional: helps with MySQL connection issues
+async_engine = create_async_engine(DATABASE_URL, echo=True, future=True)
+
+AsyncSessionLocal = async_sessionmaker(
+    bind=async_engine,
+    expire_on_commit=False
 )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
-def get_db():
-    db = Session()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db():
+    async with AsyncSessionLocal() as session:
+        yield session

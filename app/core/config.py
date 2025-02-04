@@ -1,7 +1,8 @@
 import os
+
 from dotenv import load_dotenv
 
-load_dotenv()  # load variables from .env file if present
+load_dotenv()
 
 
 class Settings:
@@ -15,7 +16,7 @@ class Settings:
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
         return (
-            f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}"
+            f"mysql+aiomysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}"
             f"@{self.MYSQL_SERVER}:{self.MYSQL_PORT}/{self.MYSQL_DB}"
         )
 
