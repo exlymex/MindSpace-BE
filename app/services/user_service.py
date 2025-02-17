@@ -11,7 +11,12 @@ class AuthService:
     async def create_user(db: AsyncSession, user_data: UserCreate) -> User:
         """Creates a new user, hashes the password before saving."""
         hashed_password = hash_password(user_data.password)
-        user = User(email=user_data.email, hashed_password=hashed_password, username=user_data.username)
+        user = User(
+            email=user_data.email,
+            username=user_data.username,
+            hashed_password=hashed_password,
+            role=user_data.role
+        )
 
         db.add(user)
         await db.commit()
