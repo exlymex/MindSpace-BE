@@ -7,12 +7,12 @@ load_dotenv()
 
 class Settings:
     PROJECT_NAME: str = "MindSpace"
-    MYSQL_USER: str = os.getenv("MYSQL_USER", "your_username")
-    MYSQL_PASSWORD: str = os.getenv("MYSQL_PASSWORD", "your_password")
-    MYSQL_SERVER: str = os.getenv("MYSQL_SERVER", "localhost")
+    MYSQL_USER: str = os.getenv("MYSQL_USER", "root")
+    MYSQL_PASSWORD: str = os.getenv("MYSQL_PASSWORD", "456")
+    MYSQL_SERVER: str = os.getenv("MYSQL_SERVER", "127.0.0.1")
     MYSQL_PORT: str = os.getenv("MYSQL_PORT", "3306")
     MYSQL_DB: str = os.getenv("MYSQL_DB", "mindspace_db")
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "TEST_SECRET")
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "REALLY__TRUE__SECRET")
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
