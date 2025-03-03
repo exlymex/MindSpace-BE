@@ -1,9 +1,11 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from typing import Optional
 
 from app.core.security import hash_password, verify_password, create_access_token
 from app.models.user import User
-from app.schemas.users import UserCreate, UserLogin
+from app.schemas.users import UserCreate, UserLogin, UserUpdate
 
 
 class AuthService:
@@ -40,3 +42,32 @@ class AuthService:
         query = select(User).where(User.role == "psychologist")
         result = await db.execute(query)
         return result.scalars().all()
+
+
+class UserService:
+    @staticmethod
+    async def update_user(db: AsyncSession, user_id: int, user_data: UserUpdate) -> Optional[User]:
+        """
+        Updates a user with new data.
+        """
+        query = select(User).where(User.id == user_id)
+        result = await db.execute(query)
+        user = result.scalars().first()
+        
+        if not user:
+            return None
+        
+        # Для Pydantic v2 використовуємо model_dump замість dict
+        try:
+            # Спочатку спробуємо новий метод для Pydantic v2
+            update_data = user_data.model_dump(exclude_unset=True)
+        except AttributeError:
+            # Якщо не спрацювало, використовуємо старий метод для Pydantic v1
+            update_data = user_data.dict(exclude_unset=True)
+        
+        for key, value in update_data.items():
+            setattr(user, key, value)
+        
+        await db.commit()
+        await db.refresh(user)
+        return user
