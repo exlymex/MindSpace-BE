@@ -33,3 +33,10 @@ class AuthService:
 
         access_token = create_access_token({"sub": user.email})
         return {"access_token": access_token, "token_type": "bearer"}
+
+    @staticmethod
+    async def get_psychologists(db: AsyncSession):
+        """Get all psychologists"""
+        query = select(User).where(User.role == "psychologist")
+        result = await db.execute(query)
+        return result.scalars().all()

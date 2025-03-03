@@ -17,7 +17,7 @@ class UserOut(UserBase):
     id: int
 
     class Config:
-        orm_mode = True  # This tells Pydantic to work with ORM objects
+        from_attributes = True  # This tells Pydantic to work with ORM objects
 
 
 class UserLogin(BaseModel):
