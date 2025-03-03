@@ -27,5 +27,5 @@ class Session(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     # relationships
-    student = relationship("User", foreign_keys=[student_id])
-    psychologist = relationship("User", foreign_keys=[psychologist_id])
+    student = relationship("User", foreign_keys=[student_id], back_populates="sessions")
+    psychologist = relationship("User", foreign_keys=[psychologist_id], back_populates="psychologist_sessions")

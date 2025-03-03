@@ -1,4 +1,6 @@
 from pydantic import BaseModel, EmailStr
+from typing import Optional
+from datetime import date
 
 from app.models.user import UserRole
 
@@ -15,9 +17,15 @@ class UserCreate(UserBase):
 
 class UserOut(UserBase):
     id: int
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    bio: Optional[str] = None
+    avatar_url: Optional[str] = None
+    birth_date: Optional[date] = None
+    phone_number: Optional[str] = None
 
     class Config:
-        from_attributes = True  # This tells Pydantic to work with ORM objects
+        from_attributes = True
 
 
 class UserLogin(BaseModel):

@@ -5,7 +5,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1.endpoints import auth, chats, sessions, users
+from app.api.v1.endpoints import auth, chats, sessions, users, materials
 from app.core.config import settings
 from app.db.base import Base
 from app.db.sessions import async_engine
@@ -48,6 +48,7 @@ app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
 app.include_router(chats.router, prefix="/api/v1/chats")
 app.include_router(sessions.router, prefix="/api/v1/sessions")
 app.include_router(users.router, prefix="/api/v1/users")
+app.include_router(materials.router, prefix="/api/v1/materials")
 
 if __name__ == "__main__":
     uvicorn.run(socket_app, host="0.0.0.0", port=8000, reload=True)
