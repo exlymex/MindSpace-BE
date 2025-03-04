@@ -16,8 +16,8 @@ router = APIRouter(tags=["chats"])
 @router.post("/", response_model=ChatOut)
 async def create_chat(
         chat_data: ChatCreate,
-        db: AsyncSession = Depends(get_db),
-        current_user: User = Depends(get_current_user)
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
 ):
     """
     Creates a new chat with a given psychologist (or student).

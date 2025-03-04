@@ -10,51 +10,57 @@ from app.models.user import User  # <-- We'll use this for ORM
 from app.schemas.messages import MessageCreate
 from app.services.chat_service import ChatService
 
-# Main Socket.IO server
 sio = socketio.AsyncServer(
     async_mode="asgi",
-    cors_allowed_origins="*",
+    cors_allowed_origins=["*", "http://localhost:8000", 'http://192.168.0.104:8000'],
+    logger=True,
+    engineio_logger=True
 )
 
-# Maps user_id -> sid
 connected_users: Dict[int, str] = {}
 
 
 @sio.event
 async def connect(sid, environ, auth):
-    print(f"[socket.io] connect sid={sid}, auth={auth}")
+    token = None
 
-    token = environ.get("HTTP_TOKEN")  # <-- read custom header
-    print("token from auth:", token)
+    if auth and 'token' in auth:
+        token = auth.get('token')
+        print("Token found in auth object:", token)
 
     if not token:
-        print("No token -> 403")
+        print("No token found in any source -> 403")
         return False
 
-    payload = decode_access_token(token)
-    print("payload:", payload)
+    try:
+        payload = decode_access_token(token)
+        print("payload:", payload)
 
-    if not payload:
-        print("decode_access_token -> None -> 403")
+        if not payload:
+            print("decode_access_token -> None -> 403")
+            return False
+
+        email = payload.get("sub")
+        print("email from token:", email)
+
+        if not email:
+            print("No email -> 403")
+            return False
+
+        async with AsyncSessionLocal() as db:
+            user_id = await get_user_id_by_email(db, email)
+        print("found user_id:", user_id)
+
+        if not user_id:
+            print("user not found -> 403")
+            return False
+
+        connected_users[user_id] = sid
+        print(f"User {user_id} (email={email}) connected with sid={sid}")
+        return True
+    except Exception as e:
+        print(f"Error during socket connection: {e}")
         return False
-
-    email = payload.get("sub")
-    print("email from token:", email)
-
-    if not email:
-        print("No email -> 403")
-        return False
-
-    async with AsyncSessionLocal() as db:
-        user_id = await get_user_id_by_email(db, email)
-    print("found user_id:", user_id)
-
-    if not user_id:
-        print("user not found -> 403")
-        return False
-
-    connected_users[user_id] = sid
-    print(f"User {user_id} (email={email}) connected with sid={sid}")
 
 
 @sio.event
@@ -163,3 +169,9 @@ def get_user_id_by_sid(sid: str) -> int:
         if stored_sid == sid:
             return uid
     return None
+
+
+# Додайте цей код для налагодження CORS
+@sio.on("connect_error")
+async def handle_connect_error(sid, data):
+    print(f"[socket.io] connect_error sid={sid}, data={data}")

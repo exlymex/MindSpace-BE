@@ -1,7 +1,7 @@
-from sqlalchemy import select
+from typing import Optional
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from typing import Optional
 
 from app.core.security import hash_password, verify_password, create_access_token
 from app.models.user import User, UserRole
@@ -13,7 +13,7 @@ class AuthService:
     async def create_user(db: AsyncSession, user_data: UserCreate) -> User:
         """Creates a new user, hashes the password before saving."""
         hashed_password = hash_password(user_data.password)
-        
+
         # Створюємо базові поля користувача
         user = User(
             email=user_data.email,
@@ -24,7 +24,7 @@ class AuthService:
             phone_number=user_data.phone_number,
             birth_date=user_data.birth_date
         )
-        
+
         # Додаємо поля для психологів, якщо роль - психолог
         if user_data.role == UserRole.psychologist:
             user.education = user_data.education
@@ -46,7 +46,12 @@ class AuthService:
             return None
 
         access_token = create_access_token({"sub": user.email})
-        return {"access_token": access_token, "token_type": "bearer"}
+
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user
+        }
 
     @staticmethod
     async def get_psychologists(db: AsyncSession):
