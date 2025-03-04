@@ -4,7 +4,7 @@ from sqlalchemy.future import select
 from typing import Optional
 
 from app.core.security import hash_password, verify_password, create_access_token
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.users import UserCreate, UserLogin, UserUpdate
 
 
@@ -13,12 +13,24 @@ class AuthService:
     async def create_user(db: AsyncSession, user_data: UserCreate) -> User:
         """Creates a new user, hashes the password before saving."""
         hashed_password = hash_password(user_data.password)
+        
+        # Створюємо базові поля користувача
         user = User(
             email=user_data.email,
-            username=user_data.username,
             hashed_password=hashed_password,
-            role=user_data.role
+            role=user_data.role,
+            first_name=user_data.first_name,
+            last_name=user_data.last_name,
+            phone_number=user_data.phone_number,
+            birth_date=user_data.birth_date
         )
+        
+        # Додаємо поля для психологів, якщо роль - психолог
+        if user_data.role == UserRole.psychologist:
+            user.education = user_data.education
+            user.specialization = user_data.specialization
+            user.license_number = user_data.license_number
+            user.experience_years = user_data.experience_years
 
         db.add(user)
         await db.commit()
@@ -39,35 +51,31 @@ class AuthService:
     @staticmethod
     async def get_psychologists(db: AsyncSession):
         """Get all psychologists"""
-        query = select(User).where(User.role == "psychologist")
+        query = select(User).where(User.role == UserRole.psychologist)
         result = await db.execute(query)
         return result.scalars().all()
 
 
 class UserService:
     @staticmethod
-    async def update_user(db: AsyncSession, user_id: int, user_data: UserUpdate) -> Optional[User]:
-        """
-        Updates a user with new data.
-        """
-        query = select(User).where(User.id == user_id)
-        result = await db.execute(query)
-        user = result.scalars().first()
-        
+    async def get_user_by_id(db: AsyncSession, user_id: int) -> Optional[User]:
+        """Отримати користувача за ID."""
+        result = await db.execute(select(User).where(User.id == user_id))
+        return result.scalars().first()
+
+    @staticmethod
+    async def update_user(db: AsyncSession, user_id: int, user_data: UserUpdate) -> User:
+        """Оновити дані користувача."""
+        user = await UserService.get_user_by_id(db, user_id)
         if not user:
-            return None
-        
-        # Для Pydantic v2 використовуємо model_dump замість dict
-        try:
-            # Спочатку спробуємо новий метод для Pydantic v2
-            update_data = user_data.model_dump(exclude_unset=True)
-        except AttributeError:
-            # Якщо не спрацювало, використовуємо старий метод для Pydantic v1
-            update_data = user_data.dict(exclude_unset=True)
-        
-        for key, value in update_data.items():
-            setattr(user, key, value)
-        
+            raise ValueError(f"Користувача з ID {user_id} не знайдено")
+
+        # Оновлюємо базові поля користувача
+        for field, value in user_data.dict(exclude_unset=True).items():
+            # Перевіряємо, чи поле існує в моделі користувача
+            if hasattr(user, field):
+                setattr(user, field, value)
+
         await db.commit()
         await db.refresh(user)
         return user

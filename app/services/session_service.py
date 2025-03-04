@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.models.session import Session, SessionStatus
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.sessions import SessionCreate, SessionUpdate
 
 
@@ -59,7 +59,7 @@ class SessionService:
         """
         query = select(User).where(
             User.id == psychologist_id,
-            User.role == "psychologist"
+            User.role == UserRole.psychologist
         )
         result = await db.execute(query)
         return result.scalars().first()

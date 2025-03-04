@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.sessions import get_db
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.users import UserOut, UserCreate, Token, UserLogin
 from app.services.user_service import AuthService
 
@@ -21,15 +21,14 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this email already exist"
         )
-
-    result = await db.execute(select(User).where(User.username == user_data.username))
-    existing_username = result.scalars().first()
-
-    if existing_username:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User with this username already exist"
-        )
+    
+    # Валідація полів для психологів
+    if user_data.role == UserRole.psychologist:
+        if not user_data.education or not user_data.specialization or not user_data.license_number or user_data.experience_years is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Для психологів обов'язково заповнити всі професійні поля"
+            )
 
     user = await AuthService.create_user(db, user_data)
     return user

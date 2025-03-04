@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, func, Text, Date, Enum
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, func, Text, Date, Enum, Float
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
@@ -16,17 +16,23 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
-    username = Column(String(100), unique=True, index=True, nullable=False)
-    role = Column(Enum(UserRole), nullable=False, default=UserRole.student)  # Додаємо роль
+    role = Column(Enum(UserRole), nullable=False, default=UserRole.student)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
-    first_name = Column(String(100), nullable=True)
-    last_name = Column(String(100), nullable=True)
+    # Базові поля для всіх користувачів
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
     bio = Column(Text, nullable=True)
     avatar_url = Column(String(512), nullable=True)
-    birth_date = Column(Date, nullable=True)
-    phone_number = Column(String(20), nullable=True)
+    birth_date = Column(Date, nullable=False)
+    phone_number = Column(String(20), nullable=False)
+
+    # Поля для психологів
+    education = Column(String(255), nullable=True)
+    specialization = Column(String(255), nullable=True)
+    license_number = Column(String(100), nullable=True)
+    experience_years = Column(Float, nullable=True)
 
     # Зв'язки
     sessions = relationship("Session", back_populates="student", foreign_keys="Session.student_id")
