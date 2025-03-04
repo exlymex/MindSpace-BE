@@ -28,4 +28,4 @@ class MaterialOut(MaterialBase):
     categories: List[CategoryOut]
 
     class Config:
-        orm_mode = True 
+                from_attributes = True

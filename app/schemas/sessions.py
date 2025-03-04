@@ -25,13 +25,18 @@ class SessionUpdate(BaseModel):
     status: Optional[SessionStatus] = None
 
 
-class SessionOut(SessionBase):
+class SessionOut(BaseModel):
     id: int
     student_id: int
-    status: str
+    psychologist_id: int
+    date: str
+    time: str
+    duration: int
+    status: SessionStatus
     notes: Optional[str] = None
-    psychologist_name: Optional[str] = None
+    price: Optional[float] = None
+    psychologist_name: str
     psychologist_avatar: Optional[str] = None
-
+    
     class Config:
-        from_attributes = True
+        orm_mode = True

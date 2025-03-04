@@ -89,7 +89,7 @@ class UserOut(UserBase):
     experience_years: Optional[float] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class Token(BaseModel):

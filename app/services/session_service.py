@@ -30,27 +30,93 @@ class SessionService:
         return session
 
     @staticmethod
-    async def get_session_by_id(db: AsyncSession, session_id: int, user_id: int) -> Optional[Session]:
+    async def get_session_by_id(db: AsyncSession, session_id: int, user_id: int) -> Optional[dict]:
         """
         Retrieves a session by its ID for a specific user.
         """
-        query = select(Session).where(
-            Session.id == session_id,
-            ((Session.student_id == user_id) | (Session.psychologist_id == user_id))
+        # Змінюємо запит, щоб отримати дані психолога разом із сесією
+        query = (
+            select(
+                Session,
+                User.first_name,
+                User.last_name,
+                User.avatar_url
+            )
+            .join(User, Session.psychologist_id == User.id)
+            .where(
+                Session.id == session_id,
+                ((Session.student_id == user_id) | (Session.psychologist_id == user_id))
+            )
         )
+        
         result = await db.execute(query)
-        return result.scalars().first()
+        row = result.first()
+        
+        if not row:
+            return None
+        
+        session = row[0]  # Session object
+        
+        # Створюємо словник з даними сесії
+        return {
+            "id": session.id,
+            "student_id": session.student_id,
+            "psychologist_id": session.psychologist_id,
+            "date": session.date,
+            "time": session.time,
+            "duration": session.duration,
+            "status": session.status,
+            "notes": session.notes,
+            "price": session.price,
+            # Додаємо дані психолога
+            "psychologist_name": f"{row.first_name} {row.last_name}" if row.first_name and row.last_name else "Невідомий психолог",
+            "psychologist_avatar": row.avatar_url
+        }
 
     @staticmethod
-    async def get_user_sessions(db: AsyncSession, user_id: int) -> List[Session]:
+    async def get_user_sessions(db: AsyncSession, user_id: int) -> List[dict]:
         """
-        Returns all sessions where the user is either the student or the psychologist.
+        Returns all sessions where the user is either the student or the psychologist,
+        including psychologist name and avatar.
         """
-        query = select(Session).where(
-            (Session.student_id == user_id) | (Session.psychologist_id == user_id)
+        # Використовуємо JOIN для отримання даних психолога в одному запиті
+        query = (
+            select(
+                Session,
+                User.first_name,
+                User.last_name,
+                User.avatar_url
+            )
+            .join(User, Session.psychologist_id == User.id)
+            .where((Session.student_id == user_id) | (Session.psychologist_id == user_id))
+            .order_by(Session.date, Session.time)
         )
+        
         result = await db.execute(query)
-        return result.scalars().all()
+        
+        # Перетворюємо результати в список словників
+        session_dicts = []
+        for row in result:
+            session = row[0]  # Session object
+            
+            # Створюємо словник з даними сесії
+            session_dict = {
+                "id": session.id,
+                "student_id": session.student_id,
+                "psychologist_id": session.psychologist_id,
+                "date": session.date,
+                "time": session.time,
+                "duration": session.duration,
+                "status": session.status,
+                "notes": session.notes,
+                "price": session.price,
+                # Додаємо дані психолога
+                "psychologist_name": f"{row.first_name} {row.last_name}" if row.first_name and row.last_name else "Невідомий психолог",
+                "psychologist_avatar": row.avatar_url
+            }
+            session_dicts.append(session_dict)
+        
+        return session_dicts
 
     @staticmethod
     async def get_psychologist_by_id(db: AsyncSession, psychologist_id: int) -> Optional[User]:
