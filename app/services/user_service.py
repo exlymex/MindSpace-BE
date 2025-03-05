@@ -2,6 +2,7 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from fastapi import UploadFile, HTTPException, status
 
 from app.core.security import hash_password, verify_password, create_access_token
 from app.models.user import User, UserRole
@@ -81,6 +82,48 @@ class UserService:
             if hasattr(user, field):
                 setattr(user, field, value)
 
+        await db.commit()
+        await db.refresh(user)
+        return user
+
+    @staticmethod
+    async def update_avatar(db: AsyncSession, user_id: int, avatar: UploadFile) -> User:
+        """Оновити аватар користувача."""
+        import os
+        import uuid
+        import aiofiles
+        
+        user = await UserService.get_user_by_id(db, user_id)
+        if not user:
+            raise ValueError(f"Користувача з ID {user_id} не знайдено")
+        
+        # Перевіряємо тип файлу
+        allowed_types = ["image/jpeg", "image/png", "image/jpg"]
+        if avatar.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Дозволені лише файли формату JPEG, JPG або PNG"
+            )
+        
+        # Створюємо директорію для зберігання аватарів, якщо вона не існує
+        upload_dir = os.path.join("static", "avatars")
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Генеруємо унікальне ім'я файлу
+        file_extension = avatar.filename.split(".")[-1]
+        unique_filename = f"{uuid.uuid4()}.{file_extension}"
+        file_path = os.path.join(upload_dir, unique_filename)
+        
+        # Зберігаємо файл
+        async with aiofiles.open(file_path, "wb") as out_file:
+            content = await avatar.read()
+            await out_file.write(content)
+        
+        # Оновлюємо URL аватара в базі даних
+        # Використовуємо відносний шлях для зберігання в БД
+        avatar_url = f"/static/avatars/{unique_filename}"
+        user.avatar_url = avatar_url
+        
         await db.commit()
         await db.refresh(user)
         return user

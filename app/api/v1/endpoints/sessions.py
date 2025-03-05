@@ -24,8 +24,8 @@ async def create_session(
     """
     Creates a new session booking.
     """
-    session = await SessionService.create_session(db, session_data, current_user.id)
-    return session
+    session_dict = await SessionService.create_session(db, session_data, current_user.id)
+    return session_dict
 
 
 @router.get("/", response_model=List[SessionOut])
@@ -60,15 +60,19 @@ async def update_session(
     """
     Updates a session with new data.
     """
-    session = await SessionService.get_session_by_id(db, session_id)
+    # Перевіряємо, чи існує сесія
+    session = await SessionService.get_session_by_id(db, session_id, current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # Check if the user is a participant of this session
-    if session.student_id != current_user.id and session.psychologist_id != current_user.id:
+    # Перевіряємо, чи користувач є учасником цієї сесії
+    if session["student_id"] != current_user.id and session["psychologist_id"] != current_user.id:
         raise HTTPException(status_code=403, detail="You are not a participant of this session")
 
     updated_session = await SessionService.update_session(db, session_id, session_data)
+    if not updated_session:
+        raise HTTPException(status_code=404, detail="Failed to update session")
+    
     return updated_session
 
 

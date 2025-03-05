@@ -11,7 +11,7 @@ from app.schemas.sessions import SessionCreate, SessionUpdate
 
 class SessionService:
     @staticmethod
-    async def create_session(db: AsyncSession, session_data: SessionCreate, student_id: int) -> Session:
+    async def create_session(db: AsyncSession, session_data: SessionCreate, student_id: int) -> dict:
         """
         Creates a new session booking.
         """
@@ -27,7 +27,26 @@ class SessionService:
         db.add(session)
         await db.commit()
         await db.refresh(session)
-        return session
+        
+        # Отримуємо дані психолога
+        query = select(User).where(User.id == session_data.psychologist_id)
+        result = await db.execute(query)
+        psychologist = result.scalars().first()
+        
+        # Повертаємо словник з усіма необхідними полями
+        return {
+            "id": session.id,
+            "student_id": session.student_id,
+            "psychologist_id": session.psychologist_id,
+            "date": session.date,
+            "time": session.time,
+            "duration": session.duration,
+            "status": session.status,
+            "notes": session.notes,
+            "price": session.price,
+            "psychologist_name": f"{psychologist.first_name} {psychologist.last_name}" if psychologist else "Невідомий психолог",
+            "psychologist_avatar": psychologist.avatar_url if psychologist else None
+        }
 
     @staticmethod
     async def get_session_by_id(db: AsyncSession, session_id: int, user_id: int) -> Optional[dict]:
@@ -131,11 +150,15 @@ class SessionService:
         return result.scalars().first()
 
     @staticmethod
-    async def update_session(db: AsyncSession, session_id: int, session_data: SessionUpdate) -> Optional[Session]:
+    async def update_session(db: AsyncSession, session_id: int, session_data: SessionUpdate) -> Optional[dict]:
         """
         Updates a session with new data.
         """
-        session = await SessionService.get_session_by_id(db, session_id, session_data.student_id)
+        # Отримуємо сесію
+        query = select(Session).where(Session.id == session_id)
+        result = await db.execute(query)
+        session = result.scalars().first()
+        
         if not session:
             return None
 
@@ -152,7 +175,26 @@ class SessionService:
 
         await db.commit()
         await db.refresh(session)
-        return session
+        
+        # Отримуємо дані психолога
+        psych_query = select(User).where(User.id == session.psychologist_id)
+        psych_result = await db.execute(psych_query)
+        psychologist = psych_result.scalars().first()
+        
+        # Повертаємо словник з усіма необхідними полями
+        return {
+            "id": session.id,
+            "student_id": session.student_id,
+            "psychologist_id": session.psychologist_id,
+            "date": session.date,
+            "time": session.time,
+            "duration": session.duration,
+            "status": session.status,
+            "notes": session.notes,
+            "price": session.price,
+            "psychologist_name": f"{psychologist.first_name} {psychologist.last_name}" if psychologist else "Невідомий психолог",
+            "psychologist_avatar": psychologist.avatar_url if psychologist else None
+        }
 
     @staticmethod
     async def cancel_session(db: AsyncSession, session_id: int) -> bool:

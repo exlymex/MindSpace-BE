@@ -1,6 +1,6 @@
 from typing import List, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
@@ -47,4 +47,27 @@ async def update_current_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Помилка при оновленні користувача: {str(e)}"
+        )
+
+
+@router.post("/me/avatar", response_model=UserOut)
+async def update_avatar(
+        avatar: UploadFile = File(...),
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
+) -> Any:
+    """Оновити аватар поточного користувача."""
+    try:
+        updated_user = await UserService.update_avatar(
+            db=db,
+            user_id=current_user.id,
+            avatar=avatar
+        )
+        return updated_user
+    except Exception as e:
+        # Логуємо помилку для відлагодження
+        print(f"Error updating avatar: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Помилка при оновленні аватара: {str(e)}"
         )

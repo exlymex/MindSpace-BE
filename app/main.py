@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
+import os
 
 import socketio
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.endpoints import auth, chats, sessions, users, materials
 from app.core.config import settings
@@ -17,6 +19,9 @@ async def lifespan(app: FastAPI):
     print("🚀Initializing")
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    # Створюємо директорію для статичних файлів, якщо вона не існує
+    os.makedirs("static/avatars", exist_ok=True)
 
     yield
 
@@ -39,6 +44,12 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+# Створюємо директорію для статичних файлів перед монтуванням
+os.makedirs("static", exist_ok=True)
+
+# Монтуємо статичні файли
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
 app.include_router(chats.router, prefix="/api/v1/chats")
