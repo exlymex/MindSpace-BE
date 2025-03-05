@@ -1,6 +1,6 @@
-from typing import List, Any
+from typing import List, Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
@@ -21,10 +21,52 @@ async def get_psychologists(
     return await AuthService.get_psychologists(db)
 
 
+@router.get("/search", response_model=Optional[UserOut])
+async def search_user_by_email(
+        email: str = Query(..., description="Email користувача для пошуку"),
+        role: Optional[str] = Query(None, description="Роль користувача (student, psychologist)"),
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
+):
+    """Пошук користувача за email та опціонально за роллю."""
+    user = await UserService.get_user_by_email(db, email)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Користувача з email {email} не знайдено"
+        )
+
+    # Якщо вказана роль, перевіряємо, чи відповідає користувач цій ролі
+    if role and user.role.value != role:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Користувача з email {email} та роллю {role} не знайдено"
+        )
+
+    return user
+
+
 @router.get("/me", response_model=UserOut)
 async def read_current_user(current_user: User = Depends(get_current_user)):
     """Отримати інформацію про поточного користувача."""
     return current_user
+
+
+@router.get("/{user_id}", response_model=UserOut)
+async def get_user_by_id(
+        user_id: int,
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
+):
+    """Отримати інформацію про користувача за ID."""
+    user = await UserService.get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Користувача з ID {user_id} не знайдено"
+        )
+    return user
 
 
 @router.put("/me", response_model=UserOut)

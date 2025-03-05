@@ -70,6 +70,12 @@ class UserService:
         return result.scalars().first()
 
     @staticmethod
+    async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
+        """Отримати користувача за email."""
+        result = await db.execute(select(User).where(User.email == email))
+        return result.scalars().first()
+
+    @staticmethod
     async def update_user(db: AsyncSession, user_id: int, user_data: UserUpdate) -> User:
         """Оновити дані користувача."""
         user = await UserService.get_user_by_id(db, user_id)

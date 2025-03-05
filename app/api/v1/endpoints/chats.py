@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional, Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,7 +35,8 @@ async def list_user_chats(
         current_user: User = Depends(get_current_user)
 ):
     """
-    Lists all chats where the current_user is either the student or the psychologist.
+    Lists all chats where the current_user is either the student or the psychologist,
+    along with the last message for each chat.
     """
     chats = await ChatService.list_chats_for_user(db, current_user.id)
     return chats
