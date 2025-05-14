@@ -60,12 +60,10 @@ async def update_session(
     """
     Updates a session with new data.
     """
-    # Перевіряємо, чи існує сесія
     session = await SessionService.get_session_by_id(db, session_id, current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # Перевіряємо, чи користувач є учасником цієї сесії
     if session["student_id"] != current_user.id and session["psychologist_id"] != current_user.id:
         raise HTTPException(status_code=403, detail="You are not a participant of this session")
 

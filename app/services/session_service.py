@@ -28,12 +28,10 @@ class SessionService:
         await db.commit()
         await db.refresh(session)
         
-        # Отримуємо дані психолога
         query = select(User).where(User.id == session_data.psychologist_id)
         result = await db.execute(query)
         psychologist = result.scalars().first()
         
-        # Повертаємо словник з усіма необхідними полями
         return {
             "id": session.id,
             "student_id": session.student_id,
@@ -53,7 +51,6 @@ class SessionService:
         """
         Retrieves a session by its ID for a specific user.
         """
-        # Змінюємо запит, щоб отримати дані психолога разом із сесією
         query = (
             select(
                 Session,
@@ -74,9 +71,8 @@ class SessionService:
         if not row:
             return None
         
-        session = row[0]  # Session object
+        session = row[0]
         
-        # Створюємо словник з даними сесії
         return {
             "id": session.id,
             "student_id": session.student_id,
@@ -87,7 +83,6 @@ class SessionService:
             "status": session.status,
             "notes": session.notes,
             "price": session.price,
-            # Додаємо дані психолога
             "psychologist_name": f"{row.first_name} {row.last_name}" if row.first_name and row.last_name else "Невідомий психолог",
             "psychologist_avatar": row.avatar_url
         }
@@ -98,7 +93,6 @@ class SessionService:
         Returns all sessions where the user is either the student or the psychologist,
         including psychologist name and avatar.
         """
-        # Використовуємо JOIN для отримання даних психолога в одному запиті
         query = (
             select(
                 Session,
@@ -113,12 +107,10 @@ class SessionService:
         
         result = await db.execute(query)
         
-        # Перетворюємо результати в список словників
         session_dicts = []
         for row in result:
-            session = row[0]  # Session object
+            session = row[0]
             
-            # Створюємо словник з даними сесії
             session_dict = {
                 "id": session.id,
                 "student_id": session.student_id,
@@ -129,7 +121,6 @@ class SessionService:
                 "status": session.status,
                 "notes": session.notes,
                 "price": session.price,
-                # Додаємо дані психолога
                 "psychologist_name": f"{row.first_name} {row.last_name}" if row.first_name and row.last_name else "Невідомий психолог",
                 "psychologist_avatar": row.avatar_url
             }
@@ -154,7 +145,6 @@ class SessionService:
         """
         Updates a session with new data.
         """
-        # Отримуємо сесію
         query = select(Session).where(Session.id == session_id)
         result = await db.execute(query)
         session = result.scalars().first()
@@ -162,12 +152,9 @@ class SessionService:
         if not session:
             return None
 
-        # Для Pydantic v2 використовуємо model_dump замість dict
         try:
-            # Спочатку спробуємо новий метод для Pydantic v2
             update_data = session_data.model_dump(exclude_unset=True)
         except AttributeError:
-            # Якщо не спрацювало, використовуємо старий метод для Pydantic v1
             update_data = session_data.dict(exclude_unset=True)
         
         for key, value in update_data.items():
@@ -176,12 +163,10 @@ class SessionService:
         await db.commit()
         await db.refresh(session)
         
-        # Отримуємо дані психолога
         psych_query = select(User).where(User.id == session.psychologist_id)
         psych_result = await db.execute(psych_query)
         psychologist = psych_result.scalars().first()
         
-        # Повертаємо словник з усіма необхідними полями
         return {
             "id": session.id,
             "student_id": session.student_id,

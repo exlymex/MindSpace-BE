@@ -37,7 +37,6 @@ async def search_user_by_email(
             detail=f"Користувача з email {email} не знайдено"
         )
 
-    # Якщо вказана роль, перевіряємо, чи відповідає користувач цій ролі
     if role and user.role.value != role:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -49,7 +48,7 @@ async def search_user_by_email(
 
 @router.get("/me", response_model=UserOut)
 async def read_current_user(current_user: User = Depends(get_current_user)):
-    """Отримати інформацію про поточного користувача."""
+    """Get current user information"""
     return current_user
 
 
@@ -75,7 +74,7 @@ async def update_current_user(
         current_user: User = Depends(get_current_user),
         db: AsyncSession = Depends(get_db)
 ) -> Any:
-    """Оновити інформацію про поточного користувача."""
+    """Update current user information"""
     try:
         updated_user = await UserService.update_user(
             db=db,
@@ -84,7 +83,6 @@ async def update_current_user(
         )
         return updated_user
     except Exception as e:
-        # Логуємо помилку для відлагодження
         print(f"Error updating user: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -98,7 +96,7 @@ async def update_avatar(
         current_user: User = Depends(get_current_user),
         db: AsyncSession = Depends(get_db)
 ) -> Any:
-    """Оновити аватар поточного користувача."""
+    """Update current user avatar"""
     try:
         updated_user = await UserService.update_avatar(
             db=db,
@@ -107,7 +105,6 @@ async def update_avatar(
         )
         return updated_user
     except Exception as e:
-        # Логуємо помилку для відлагодження
         print(f"Error updating avatar: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

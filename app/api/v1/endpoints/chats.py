@@ -21,10 +21,7 @@ async def create_chat(
 ):
     """
     Creates a new chat with a given psychologist (or student).
-    In practice, you might check the current_user role or ID.
     """
-    # Optionally ensure current_user is actually a student or that
-    # chat_data.student_id == current_user.id, etc.
     chat = await ChatService.create_chat(db, chat_data)
     return chat
 

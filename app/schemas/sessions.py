@@ -37,6 +37,6 @@ class SessionOut(BaseModel):
     price: Optional[float] = None
     psychologist_name: str
     psychologist_avatar: Optional[str] = None
-    
+
     class Config:
-        orm_mode = True
+        from_attributes = True

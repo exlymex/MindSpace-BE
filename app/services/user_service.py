@@ -15,7 +15,6 @@ class AuthService:
         """Creates a new user, hashes the password before saving."""
         hashed_password = hash_password(user_data.password)
 
-        # Створюємо базові поля користувача
         user = User(
             email=user_data.email,
             hashed_password=hashed_password,
@@ -26,7 +25,6 @@ class AuthService:
             birth_date=user_data.birth_date
         )
 
-        # Додаємо поля для психологів, якщо роль - психолог
         if user_data.role == UserRole.psychologist:
             user.education = user_data.education
             user.specialization = user_data.specialization
@@ -102,8 +100,7 @@ class UserService:
         user = await UserService.get_user_by_id(db, user_id)
         if not user:
             raise ValueError(f"Користувача з ID {user_id} не знайдено")
-        
-        # Перевіряємо тип файлу
+
         allowed_types = ["image/jpeg", "image/png", "image/jpg"]
         if avatar.content_type not in allowed_types:
             raise HTTPException(
@@ -125,7 +122,6 @@ class UserService:
             content = await avatar.read()
             await out_file.write(content)
         
-        # Оновлюємо URL аватара в базі даних
         # Використовуємо відносний шлях для зберігання в БД
         avatar_url = f"/static/avatars/{unique_filename}"
         user.avatar_url = avatar_url

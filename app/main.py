@@ -20,7 +20,6 @@ async def lifespan(app: FastAPI):
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    # Створюємо директорію для статичних файлів, якщо вона не існує
     os.makedirs("static/avatars", exist_ok=True)
 
     yield
@@ -45,10 +44,8 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Створюємо директорію для статичних файлів перед монтуванням
 os.makedirs("static", exist_ok=True)
 
-# Монтуємо статичні файли
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
@@ -57,7 +54,6 @@ app.include_router(sessions.router, prefix="/api/v1/sessions")
 app.include_router(users.router, prefix="/api/v1/users")
 app.include_router(materials.router, prefix="/api/v1/materials")
 
-# Create the ASGI app that wraps FastAPI with Socket.IO
 socket_app = socketio.ASGIApp(
     socketio_server=sio,
     other_asgi_app=app,

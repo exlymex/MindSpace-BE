@@ -12,7 +12,7 @@ from app.services.chat_service import ChatService
 
 sio = socketio.AsyncServer(
     async_mode="asgi",
-    cors_allowed_origins=["*", "http://localhost:8000", 'http://192.168.0.104:8000'],
+    cors_allowed_origins=["*", "http://localhost:8000"],
     logger=True,
     engineio_logger=True
 )
@@ -89,7 +89,6 @@ async def handle_send_message(sid, data):
     """
     print(f"[socket.io] send_message from sid={sid}, data={data}")
 
-    # 1. Determine sender_id from 'sid'
     sender_id = get_user_id_by_sid(sid)
     if not sender_id:
         print("Sender not found in connected_users.")
@@ -98,7 +97,6 @@ async def handle_send_message(sid, data):
     chat_id = data["chat_id"]
     text = data["text"]
 
-    # 2. Check if the sender is a participant of this chat
     async with AsyncSessionLocal() as db:
         chat = await ChatService.get_chat_by_id(db, chat_id)
         if not chat:
@@ -109,7 +107,6 @@ async def handle_send_message(sid, data):
             print(f"User {sender_id} is not a participant of chat {chat_id}")
             return
 
-        # 3. Save message in DB
         msg_data = MessageCreate(
             chat_id=chat_id,
             sender_id=sender_id,
@@ -117,13 +114,11 @@ async def handle_send_message(sid, data):
         )
         saved_msg = await ChatService.save_message(db, msg_data)
 
-        # 4. Determine the other participant
         if sender_id == chat.student_id:
             other_user_id = chat.psychologist_id
         else:
             other_user_id = chat.student_id
 
-        # 5. If the other participant is online, emit "new_message"
         recipient_sid = connected_users.get(other_user_id)
         if recipient_sid:
             await sio.emit(
@@ -140,7 +135,6 @@ async def handle_send_message(sid, data):
         else:
             print(f"User {other_user_id} is offline.")
 
-        # 6. Send ack to sender
         await sio.emit(
             "message_sent",
             {

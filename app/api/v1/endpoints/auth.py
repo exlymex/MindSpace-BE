@@ -22,7 +22,6 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
             detail="User with this email already exist"
         )
     
-    # Валідація полів для психологів
     if user_data.role == UserRole.psychologist:
         if not user_data.education or not user_data.specialization or not user_data.license_number or user_data.experience_years is None:
             raise HTTPException(
