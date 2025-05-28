@@ -12,7 +12,7 @@ from app.services.chat_service import ChatService
 
 sio = socketio.AsyncServer(
     async_mode="asgi",
-    cors_allowed_origins=["*", "http://localhost:8000"],
+    cors_allowed_origins=["*", "http://localhost:8000", "http://192.168.0.104:8000"],
     logger=True,
     engineio_logger=True
 )
